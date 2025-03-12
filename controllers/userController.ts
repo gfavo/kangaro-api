@@ -26,7 +26,7 @@ values
   (default, ${data.name}, ${data.password}, ${data.username})`;
     res.json("Worked!");
   } catch (e) {
-    res.json((e as NeonDbError).detail);
+    res.status(400).json((e as NeonDbError).detail);
     console.log(e);
   }
 };
