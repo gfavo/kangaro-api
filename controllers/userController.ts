@@ -57,12 +57,11 @@ export const logIn = async (req: Request, res: Response) => {
       throw new Error("Incorrect password!");
     }
 
-
-    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: "1m" });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "develop",
+      secure: true,
       sameSite: "strict",
   });
 
