@@ -20,13 +20,18 @@ export const getUsers = async (req: Request, res: Response) => {
 export const postUser = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
+    const userExists = await sql`SELECT COUNT(*) from "admins" WHERE "email" = ${data.email}`;
+    console.log(userExists[0].count);
+    if(userExists[0].count > 0) {
+      throw new Error('Email already registered!');
+    }
     const result = await sql`insert into
-  "admins" ("id", "name", "password", "username")
+  "admins" ("id", "name", "password", "email")
 values
-  (default, ${data.name}, ${data.password}, ${data.username})`;
-    res.json("Worked!");
+  (default, ${data.name}, ${data.password}, ${data.email})`;
+    res.json("Registered Sucessfully!");
   } catch (e) {
-    res.status(400).json((e as NeonDbError).detail);
-    console.log(e);
+    res.status(400).json((e as Error).message);
   }
 };
+
