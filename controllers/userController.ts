@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/user";
-import { NeonDbError } from "@neondatabase/serverless";
+import bcrypt from "bcrypt";
+
 require("dotenv").config();
 
 const { neon } = require("@neondatabase/serverless");
@@ -20,18 +21,37 @@ export const getUsers = async (req: Request, res: Response) => {
 export const postUser = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
-    const userExists = await sql`SELECT COUNT(*) from "admins" WHERE "email" = ${data.email}`;
+    const salt = await bcrypt.genSalt();
+    const encryptedPass = await bcrypt.hash(data.password, salt);
+    const userExists =
+      await sql`SELECT COUNT(*) from "admins" WHERE "email" = ${data.email}`;
     console.log(userExists[0].count);
-    if(userExists[0].count > 0) {
-      throw new Error('Email already registered!');
+    if (userExists[0].count > 0) {
+      throw new Error("Email already registered!");
     }
     const result = await sql`insert into
   "admins" ("id", "name", "password", "email")
 values
-  (default, ${data.name}, ${data.password}, ${data.email})`;
+  (default, ${data.name}, ${encryptedPass}, ${data.email})`;
     res.json("Registered Sucessfully!");
   } catch (e) {
     res.status(400).json((e as Error).message);
   }
 };
 
+export const logIn = async (req: Request, res: Response) => {
+  try {
+    const data = req.body as User;
+    const sqlData = await sql`SELECT "email", "password" from "admins" WHERE "email" = ${data.email}`;
+    const user = sqlData[0] as User;
+    if(!user) {
+      throw new Error("User not found!");
+    }
+    if(!(await bcrypt.compare(data.password, user.password))) {
+      throw new Error("Incorrect password!");
+    }
+    res.json("Logged-in Sucessfully!");
+  } catch (e) {
+    res.status(401).json((e as Error).message);
+  }
+};
