@@ -1,12 +1,17 @@
 import { Request, Response } from "express";
 import User from "../models/user";
 import bcrypt from "bcrypt";
+import * as jwt from 'jsonwebtoken';
+
 
 require("dotenv").config();
 
 const { neon } = require("@neondatabase/serverless");
 
 const sql = neon(process.env.DATABASE_URL);
+
+
+const JWT_SECRET: jwt.Secret = process.env.JWT_SECRET as string;
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -44,13 +49,24 @@ export const logIn = async (req: Request, res: Response) => {
     const data = req.body as User;
     const sqlData = await sql`SELECT "email", "password" from "admins" WHERE "email" = ${data.email}`;
     const user = sqlData[0] as User;
+
     if(!user) {
       throw new Error("User not found!");
     }
     if(!(await bcrypt.compare(data.password, user.password))) {
       throw new Error("Incorrect password!");
     }
-    res.json("Logged-in Sucessfully!");
+
+
+    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "develop",
+      sameSite: "strict",
+  });
+
+    res.json({message: "Logged-in Sucessfully!", token});
   } catch (e) {
     res.status(401).json((e as Error).message);
   }
