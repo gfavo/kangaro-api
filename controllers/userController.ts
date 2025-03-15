@@ -23,21 +23,23 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const postUser = async (req: Request, res: Response) => {
+export const createOrganization = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
     const salt = await bcrypt.genSalt();
     const encryptedPass = await bcrypt.hash(data.password, salt);
     const userExists =
-      await sql`SELECT COUNT(*) from "admins" WHERE "email" = ${data.email}`;
+      await sql`SELECT COUNT(*) from "users" WHERE "email" = ${data.email}`;
     console.log(userExists[0].count);
     if (userExists[0].count > 0) {
       throw new Error("Email already registered!");
     }
-    const result = await sql`insert into
-  "admins" ("id", "name", "password", "email")
+    const resultOrg = await sql`insert into "organizations" ("id", "name") values (default, ${data.organizationName}) RETURNING id`;
+        
+    const resultUser = await sql`insert into
+  "users" ("id", "name", "password", "email", "role", "organization_id")
 values
-  (default, ${data.name}, ${encryptedPass}, ${data.email})`;
+  (default, ${data.name}, ${encryptedPass}, ${data.email}, ${data.role}, ${resultOrg[0].id})`;
     res.json("Registered Sucessfully!");
   } catch (e) {
     res.status(400).json((e as Error).message);
@@ -47,7 +49,7 @@ values
 export const logIn = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
-    const sqlData = await sql`SELECT "email", "password" from "admins" WHERE "email" = ${data.email}`;
+    const sqlData = await sql`SELECT "name", "organization_id", "email", "password" from "users" WHERE "email" = ${data.email}`;
     const user = sqlData[0] as User;
 
     if(!user) {
@@ -57,7 +59,7 @@ export const logIn = async (req: Request, res: Response) => {
       throw new Error("Incorrect password!");
     }
 
-    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: "1m" });
+    const token = jwt.sign({ email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1m" });
 
     res.cookie("token", token, {
       httpOnly: true,
