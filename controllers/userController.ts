@@ -49,8 +49,9 @@ values
 export const logIn = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
-    const sqlData = await sql`SELECT "name", "organization_id", "email", "password" from "users" WHERE "email" = ${data.email}`;
-    const user = sqlData[0] as User;
+    const sqlUserData = await sql`SELECT "name", "organization_id", "email", "password" from "users" WHERE "email" = ${data.email}`;
+    const user = sqlUserData[0] as User;
+
 
     if(!user) {
       throw new Error("User not found!");
@@ -59,7 +60,11 @@ export const logIn = async (req: Request, res: Response) => {
       throw new Error("Incorrect password!");
     }
 
-    const token = jwt.sign({ email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1m" });
+    const sqlOrgData = await sql`SELECT "name" FROM "organizations" WHERE "id" = ${user.organization_id}`;
+    const orgName = (sqlOrgData[0] as {name: string}).name;
+    console.log(orgName);
+
+    const token = jwt.sign({ email: user.email, role: user.role, organizationName: orgName }, JWT_SECRET, { expiresIn: "1h" });
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -72,3 +77,4 @@ export const logIn = async (req: Request, res: Response) => {
     res.status(401).json((e as Error).message);
   }
 };
+
