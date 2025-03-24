@@ -15,7 +15,7 @@ export const checkSession = async (req: Request, res: Response) => {
 
     jwt.verify(cookies.token, JWT_SECRET, (err: any, decoded: any) => {
       if (err) return res.status(403).json({ user: null });
-      res.json({ user: { email: decoded.email, organizationName: decoded.organizationName} });
+      res.json({ user: { email: decoded.email, organizationName: decoded.organizationName, name: decoded.name} });
     });
   } catch (e) {}
 };
