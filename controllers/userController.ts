@@ -49,7 +49,7 @@ values
 export const logIn = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
-    const sqlUserData = await sql`SELECT "name", "organization_id", "email", "password" from "users" WHERE "email" = ${data.email}`;
+    const sqlUserData = await sql`SELECT "name", "organization_id", "role", "email", "password" from "users" WHERE "email" = ${data.email}`;
     const user = sqlUserData[0] as User;
 
 
