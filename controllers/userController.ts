@@ -64,7 +64,7 @@ export const logIn = async (req: Request, res: Response) => {
     const orgName = (sqlOrgData[0] as {name: string}).name;
     console.log(orgName);
 
-    const token = jwt.sign({ email: user.email, role: user.role, organizationName: orgName }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ email: user.email, role: user.role, organizationName: orgName, name: user.name }, JWT_SECRET, { expiresIn: "1h" });
 
     res.cookie("token", token, {
       httpOnly: true,
