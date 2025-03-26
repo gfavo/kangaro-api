@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import User from "../models/user";
 import bcrypt from "bcrypt";
 import * as jwt from 'jsonwebtoken';
+import { SendVerificationEmail } from "../services/sendEmail";
 
 
 require("dotenv").config();
@@ -40,6 +41,7 @@ export const createOrganization = async (req: Request, res: Response) => {
   "users" ("id", "name", "password", "email", "role", "organization_id")
 values
   (default, ${data.name}, ${encryptedPass}, ${data.email}, ${data.role}, ${resultOrg[0].id})`;
+    SendVerificationEmail(data.email, "test.com");
     res.json("Registered Sucessfully!");
   } catch (e) {
     res.status(400).json((e as Error).message);
@@ -51,7 +53,6 @@ export const logIn = async (req: Request, res: Response) => {
     const data = req.body as User;
     const sqlUserData = await sql`SELECT "name", "organization_id", "role", "email", "password" from "users" WHERE "email" = ${data.email}`;
     const user = sqlUserData[0] as User;
-
 
     if(!user) {
       throw new Error("User not found!");
