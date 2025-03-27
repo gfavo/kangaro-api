@@ -5,6 +5,7 @@ export default interface User {
      role: string;
      organizationName: string;
      organization_id?: number;
+     active?: boolean;
 }
 
 export interface SessionUser extends User {

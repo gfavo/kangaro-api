@@ -40,8 +40,10 @@ export const createOrganization = async (req: Request, res: Response) => {
     const resultUser = await sql`insert into
   "users" ("id", "name", "password", "email", "role", "organization_id")
 values
-  (default, ${data.name}, ${encryptedPass}, ${data.email}, ${data.role}, ${resultOrg[0].id})`;
-    SendVerificationEmail(data.email, "test.com");
+  (default, ${data.name}, ${encryptedPass}, ${data.email}, ${data.role}, ${resultOrg[0].id}) RETURNING id`;
+
+    SendVerificationEmail(data.email, resultUser[0].id);
+
     res.json("Registered Sucessfully!");
   } catch (e) {
     res.status(400).json((e as Error).message);
@@ -51,9 +53,12 @@ values
 export const logIn = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
-    const sqlUserData = await sql`SELECT "name", "organization_id", "role", "email", "password" from "users" WHERE "email" = ${data.email}`;
+    const sqlUserData = await sql`SELECT "name", "organization_id", "role", "email", "password", "active" from "users" WHERE "email" = ${data.email}`;
     const user = sqlUserData[0] as User;
 
+    if(user.active == false){
+      throw new Error("Email not verificated yet!");
+    }
     if(!user) {
       throw new Error("User not found!");
     }
@@ -72,6 +77,7 @@ export const logIn = async (req: Request, res: Response) => {
       secure: true,
       sameSite: "strict",
   });
+
 
     res.json({message: "Logged-in Sucessfully!", token});
   } catch (e) {

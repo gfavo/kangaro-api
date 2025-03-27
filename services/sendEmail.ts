@@ -1,6 +1,11 @@
 import nodemailer from 'nodemailer' ; 
+import bcrypt from "bcrypt";
 
-export const SendVerificationEmail = async (email: string, urlLink: string) => {
+require("dotenv").config();
+const { neon } = require("@neondatabase/serverless");
+const sql = neon(process.env.DATABASE_URL);
+
+export const SendVerificationEmail = async (email: string, userId: string) => {
   const emailPass = process.env.EMAIL_PASS;
 
   console.log(emailPass);
@@ -14,6 +19,12 @@ export const SendVerificationEmail = async (email: string, urlLink: string) => {
       pass: emailPass
     },
   });
+  
+
+  const hash =  (await bcrypt.hash(Math.random().toString(), 2)).replace(/\//g, "slash");;
+
+
+  await sql`insert into "verification_hashes" ("id", "hash", "user_id") values (default, ${hash}, ${userId}) RETURNING id`;
 
     // send mail with defined transport object
     const info = await transporter.sendMail({
@@ -21,12 +32,9 @@ export const SendVerificationEmail = async (email: string, urlLink: string) => {
         to: email, // list of receivers
         subject: "Verificate your account!", // Subject line
         text: "Hello world?", // plain text body
-        html: `<b>Hello person! Please click this link to verify your email account: ${urlLink}</b>`, // html body
+        html: `<b>Hello person! Please click this link to verify your email account: ${"http://localhost:3000/verification/"+hash}</b>`, // html body
       });
     
       console.log("Message sent: %s", info.messageId);
       // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
-
-  
-
 };
