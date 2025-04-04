@@ -96,11 +96,20 @@ export const logIn = async (req: Request, res: Response) => {
 
 export const verificateUser = async (req: Request, res: Response) => {
   const data = req.body;
-  const hashCheck = await sql`SELECT "user_id", "hash" FROM verification_hashes WHERE "hash" = ${data.hash}`;
-  console.log(data);
 
-  console.log(hashCheck);
+  try {
+    const hashCheck =
+      await sql`SELECT "user_id", "hash" FROM verification_hashes WHERE "hash" = ${data.hash}`;
+    const hashData = hashCheck[0] as {user_id: string, hash: string};
+    if(!hashData) {
+      throw new Error('Invalid link!');
+    }
 
-  res.status(200).json('Sucess');
+    const activateUser = await sql`UPDATE users SET "active" = TRUE WHERE "id" = ${hashData.user_id}`;
+    const deleteHash = await sql`DELETE FROM verification_hashes WHERE "hash" = ${data.hash}`;
 
+    res.status(200).json("User verified sucessfully! You can now login.");
+  } catch (e) {
+    res.status(401).json((e as Error).message);
+  }
 };
