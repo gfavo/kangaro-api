@@ -53,7 +53,7 @@ export const logIn = async (req: Request, res: Response) => {
   try {
     const data = req.body as User;
     const sqlUserData =
-      await sql`SELECT "name", "organization_id", "role", "email", "password", "active" from "users" WHERE "email" = ${data.email}`;
+      await sql`SELECT "name", "organization_id", "role", "email", "password", "active", "id" from "users" WHERE "email" = ${data.email}`;
     const user = sqlUserData[0] as User;
 
     if (user.active == false) {
@@ -77,6 +77,7 @@ export const logIn = async (req: Request, res: Response) => {
         role: user.role,
         organizationName: orgName,
         name: user.name,
+        id: user.id,
       },
       JWT_SECRET,
       { expiresIn: "1h" }

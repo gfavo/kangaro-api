@@ -31,3 +31,13 @@ export const getTeachers = async (req: Request, res: Response) => {
     res.status(200).send(teachers);
   } catch (e) {}
 };
+
+export const getStudents = async (req: Request, res: Response) => { 
+  try {
+    const body = req.body as {teacherId: number};
+
+    const students: {name: string}[] = await sql`SELECT * FROM "students" WHERE teacher_id = ${body.teacherId}`;
+    
+    res.status(200).send(students);
+  } catch (e) {}
+}
